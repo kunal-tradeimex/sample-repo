@@ -30,7 +30,7 @@ jobs:
       - name: Deploy to Container
         shell: powershell
         run: |
-          ssh -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+          ssh -o StrictHostKeyChecking=no -p 2222 deployer@127.0.0.1 "
             cd /var/www/my-app && \
             git pull origin main && \
             npm ci --only=production && \
