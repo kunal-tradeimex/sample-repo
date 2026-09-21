@@ -42,4 +42,4 @@ jobs:
             npm ci --only=production
             npx prisma generate
             npm run build
-            pm2 reload my-backend || pm2 start dist/main.js --name "my-backend"
+            pm2 reload my-backend || pm2 start dist/main.js --name "my-backend" 
