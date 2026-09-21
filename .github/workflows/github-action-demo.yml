@@ -1,0 +1,44 @@
+name: Test And Deploy to Local Container
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  test-and-deploy:
+    # Forces github to run the workflow on the local machine runner
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout/@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4 
+        with: 
+          node-version: 20
+
+      - name: Run tests
+        run: |
+          npm ci
+          npm test --if-present
+
+      - name: Deploy to Local VPS Container
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: ${{ secrets.SERVER_PORT }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: | 
+            cd /var/www/mp-app 
+            # Initialize or pull repo
+            if [ ! -d ".git"]; then 
+              git clone https://github.com/${{ github.repository }}.git .
+            else 
+              git pull origin main 
+            fi
+
+            cd backend
+            npm ci --only=production
+            pm2 reload my-backend || pm2 start index.js --name "my-backend"
