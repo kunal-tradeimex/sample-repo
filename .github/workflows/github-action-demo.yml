@@ -27,14 +27,7 @@ jobs:
         run: npm run test
         continue-on-error: true
 
-      - name: Deploy to Container
+      - name: Deploy to Local Container via Docker Exec
         shell: powershell
         run: |
-          ssh -o StrictHostKeyChecking=no -p 2222 deployer@127.0.0.1 "
-            cd /var/www/my-app && \
-            git pull origin main && \
-            npm ci --only=production && \
-            npx prisma generate && \
-            npm run build && \
-            (pm2 reload my-backend || pm2 start dist/main.js --name 'my-backend')
-          "
+          docker exec vps-container bash -c "cd /var/www/my-app && git pull origin main && npm ci --only=production && npx prisma generate && npm run build && (pm2 reload my-backend || pm2 start dist/main.js --name 'my-backend')"
