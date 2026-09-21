@@ -30,16 +30,14 @@ jobs:
         continue-on-error: true
 
       - name: Deploy to Container
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          port: ${{ secrets.SERVER_PORT }}
-          username: ${{ secrets.SERVER_USER }}
-          password: ${{ secrets.SERVER_PASSWORD }}
-          script: |
-            cd /var/www/my-app
-            git pull origin main
-            npm ci --only=production
-            npx prisma generate
-            npm run build
-            pm2 reload my-backend || pm2 start dist/main.js --name "my-backend" 
+        - name: Deploy to Container
+        shell: powershell
+        run: |
+          ssh -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+            cd /var/www/my-app && \
+            git pull origin main && \
+            npm ci --only=production && \
+            npx prisma generate && \
+            npm run build && \
+            (pm2 reload my-backend || pm2 start dist/main.js --name 'my-backend')
+          "
