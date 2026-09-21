@@ -48,6 +48,7 @@ lerna-debug.log*
 .agents
 .claude
 .windsurf
+actions-runner
 
 # Runtime data
 pids
