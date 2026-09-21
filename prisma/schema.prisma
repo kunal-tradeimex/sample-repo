@@ -1,0 +1,134 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+// ===================================
+// ENUMS
+// ===================================
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+// ===================================
+// USER MODEL
+// ===================================
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  name        String?
+  avatarUrl   String?  @map("avatar_url")
+
+  // Relations
+  trips       Trip[]
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  lastUpdated DateTime @updatedAt @map("last_updated")
+
+  @@map("users")
+}
+
+// ===================================
+// TRIP MODEL
+// ===================================
+model Trip {
+  id          String         @id @default(uuid())
+  title       String
+  destination String
+  startDate   DateTime       @map("start_date")
+  endDate     DateTime       @map("end_date")
+  budget      String?
+  vibe        Json?          // Json format for contract portability
+
+  // Relations
+  userId      String         @map("user_id")
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  days        ItineraryDay[]
+  chatHistory ChatMessage[]
+
+  createdAt   DateTime       @default(now()) @map("created_at")
+  lastUpdated DateTime       @updatedAt @map("last_updated")
+
+  @@index([userId])
+  @@map("trips")
+}
+
+// ===================================
+// ITINERARY DAY MODEL
+// ===================================
+model ItineraryDay {
+  id          String     @id @default(uuid())
+  dayNumber   Int        @map("day_number")
+  date        DateTime
+
+  // Relations
+  tripId      String     @map("trip_id")
+  trip        Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  activities  Activity[]
+
+  createdAt   DateTime   @default(now()) @map("created_at")
+  lastUpdated DateTime   @updatedAt @map("last_updated")
+
+  @@unique([tripId, dayNumber])
+  @@map("itinerary_days")
+}
+
+// ===================================
+// ACTIVITY MODEL
+// ===================================
+model Activity {
+  id            String       @id @default(uuid())
+  title         String
+  description   String?      @db.Text
+  timeSlot      String?      @map("time_slot")
+  order         Int
+
+  placeId       String?      @map("place_id")
+  address       String?
+  latitude      Float?
+  longitude     Float?
+  category      String?
+  estimatedCost Float?       @map("estimated_cost")
+
+  // Relations
+  dayId         String       @map("day_id")
+  day           ItineraryDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime     @default(now()) @map("created_at")
+  lastUpdated   DateTime     @updatedAt @map("last_updated")
+
+  @@index([dayId])
+  @@map("activities")
+}
+
+// ===================================
+// CHAT HISTORY MODEL
+// ===================================
+model ChatMessage {
+  id        String      @id @default(uuid())
+  role      MessageRole
+  content   String      @db.Text
+
+  toolCalls Json?       @map("tool_calls")
+
+  // Relations
+  tripId    String      @map("trip_id")
+  trip      Trip        @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  @@index([tripId])
+  @@map("chat_messages")
+}
