@@ -10,5 +10,10 @@ export class AppController {
     return this.appService.getHello();
   }
 
+  @Get()
+  sampleController(): string {
+    return "Sample Controller text";
+  }
+
   
 }
