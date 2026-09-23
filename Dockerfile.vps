@@ -16,5 +16,5 @@ RUN mkdir -p /var/www/my-app && chown -R deployer:root /var/www/my-app
 # Start SSH daemon
 RUN service ssh start
 EXPOSE 22 3000
-
+ 
 CMD ["/usr/sbin/sshd", "-D"]
