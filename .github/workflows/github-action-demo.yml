@@ -45,9 +45,10 @@ jobs:
           # 1. Configure safe directory inside container
           docker exec vps-container git config --global --add safe.directory /var/www/my-app
 
-          # 2. Execute fail-safe deployment inside container 
-          docker container vps-container bash -c '
+          # 2. Execute fail-safe deployment inside container
+          $deployScript = @' 
             set -e # Stop script immediately if any command fails
+
             cd /var/www/my-app
 
             echo "==> Fetching latest chagnes..."
@@ -73,4 +74,6 @@ jobs:
             else 
               pm2 start dist/main.js --name "my-backend"
             fi
-          '
+          '@
+
+          docker exec vps-container bash -c "$deployScript"
