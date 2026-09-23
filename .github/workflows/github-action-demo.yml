@@ -10,29 +10,28 @@ jobs:
     timeout-minutes: 5 # Force terminates job if stuck longer than 10 minutes
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      # - name: Checkout Code
+      #   uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: 22
 
-      - name: Install Dependencies
-        run: npm ci
+      # - name: Install Dependencies
+      #   run: npm ci
 
-      - name: Generate Prisma Client
-        run: npx prisma generate
+      # - name: Generate Prisma Client
+      #   run: npx prisma generate
 
-      - name: Run Tests
-        run: npm run test
-        continue-on-error: true
+      # - name: Run Tests
+      #   run: npm run test
+      #   continue-on-error: true
 
       - name: Deploy to Local Container via Docker Exec
         shell: powershell
         run: |
           # Configure safe directory inside container
-          docker exec vps-container git config --global --add safe.directory /var/www/my-app
+          echo "Hello Word"
 
-          # Run non-interactive git fetch/reset and deploy commands
-          docker exec vps-container bash -c "cd /var/www/my-app && git fetch origin main && git reset --hard origin/main && npm ci && npx prisma generate && npm run build && npm prune --omit=dev && (pm2 reload my-backend || pm2 start dist/main.js --name 'my-backend')"
+         
