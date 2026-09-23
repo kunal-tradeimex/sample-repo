@@ -1,37 +1,75 @@
-name: Test and Deploy
+name: Test and Deployment
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  test-and-deploy:
+  # Test and build check
+  test:
+    name: Run Tests & Verification
     runs-on: self-hosted
-    timeout-minutes: 5 # Force terminates job if stuck longer than 10 minutes
+    timeout-minutes: 5
 
     steps:
-      # - name: Checkout Code
-      #   uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4 
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
 
-      # - name: Setup Node.js
-      #   uses: actions/setup-node@v4
-      #   with:
-      #     node-version: 22
+      - name: Install Dependencies
+        run: npm ci
 
-      # - name: Install Dependencies
-      #   run: npm ci
+      - name: Generate Prisma Client
+        run: npx prisma generate
 
-      # - name: Generate Prisma Client
-      #   run: npx prisma generate
+      - name: Run Unit & Integration Tests
+        run: npm run test
 
-      # - name: Run Tests
-      #   run: npm run test
-      #   continue-on-error: true
+  # Deploy to the Vps Container
+  deploy:
+    name: Deploy to Production
+    needs: test 
+    runs-on: self-hosted
+    timeout-minutes: 5
 
+    steps:
       - name: Deploy to Local Container via Docker Exec
         shell: powershell
         run: |
-          # Configure safe directory inside container
-          echo "Hello Word"
+          # 1. Configure safe directory inside container
+          docker exec vps-container git config --global --add safe.directory /var/www/my-app
 
-         
+          # 2. Execute fail-safe deployment inside container 
+          docker container vps-container bash -c '
+            set -e # Stop script immediately if any command fails
+            cd /var/www/my-app
+
+            echo "==> Fetching latest chagnes..."
+            git fetch origin main
+            git reset --hard origin/main 
+
+            echo "==> Installing production & build deps."
+            npm ci
+
+            echo "==> Generating Prisma Client & Running Migrations"
+            npx prisma generate
+            npx prisma migrate deploy 
+
+            echo "==> Building application:"
+            npm run build
+
+            echo "==> Pruning development Dependencies..."
+            npm prune --omit=dev 
+
+            echo "==> Reloading application in PM2"
+            if pm2 describe my-backend > /dev/null 2>&1; then 
+              pm2 reload my-backend --update-env 
+            else 
+              pm2 start dist/main.js --name "my-backend"
+            fi
+          '
