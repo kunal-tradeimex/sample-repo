@@ -76,4 +76,4 @@ jobs:
             fi
           '@
 
-          docker exec vps-container bash -c "$deployScript"
+          $deployScript | docker exec -i vps-container bash -c 'tr -d "\r" | bash'
