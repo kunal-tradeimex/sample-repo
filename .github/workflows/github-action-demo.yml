@@ -35,4 +35,4 @@ jobs:
           docker exec vps-container git config --global --add safe.directory /var/www/my-app
 
           # Run non-interactive git fetch/reset and deploy commands
-          docker exec vps-container bash -c "cd /var/www/my-app && git fetch origin main && git reset --hard origin/main && npm ci --omit=dev && npx prisma generate && npm run build && (pm2 reload my-backend || pm2 start dist/main.js --name 'my-backend')"
+          docker exec vps-container bash -c "cd /var/www/my-app && git fetch origin main && git reset --hard origin/main && npm ci && npx prisma generate && npm run build && npm prune --omit=dev && (pm2 reload my-backend || pm2 start dist/main.js --name 'my-backend')"
