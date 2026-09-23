@@ -11,7 +11,7 @@ export class AppService {
     return this.prisma.onModuleInit()
   }
  
-  getHello(): any {
-    return this.prisma;
-  }
+  // getHello(): any {
+  //   return this.prisma;
+  // }
 }
