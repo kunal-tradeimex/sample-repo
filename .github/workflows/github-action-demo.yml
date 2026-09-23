@@ -29,14 +29,13 @@ jobs:
 
       - name: Run Unit & Integration Tests
         run: npm run test
-        continue-on-error: true
 
-  # Deploy to the Vps Container
+  # Deploy to the VPS Container
   deploy:
     name: Deploy to Production
     needs: test 
     runs-on: self-hosted
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - name: Deploy to Local Container via Docker Exec
@@ -45,35 +44,28 @@ jobs:
           # 1. Configure safe directory inside container
           docker exec vps-container git config --global --add safe.directory /var/www/my-app
 
-          # 2. Execute fail-safe deployment inside container
-          $deployScript = @' 
-            set -e # Stop script immediately if any command fails
+          # 2. Execute fail-safe deployment inside container using encoded script stream
+          $commands = @(
+            'set -e',
+            'cd /var/www/my-app',
+            'echo "==> Fetching latest changes..."',
+            'git fetch origin main',
+            'git reset --hard origin/main',
+            'echo "==> Installing production & build deps..."',
+            'npm ci',
+            'echo "==> Generating Prisma Client & Running Migrations..."',
+            'npx prisma generate',
+            'npx prisma migrate deploy',
+            'echo "==> Building application..."',
+            'npm run build',
+            'echo "==> Pruning development Dependencies..."',
+            'npm prune --omit=dev',
+            'echo "==> Reloading application in PM2..."',
+            'if pm2 describe my-backend > /dev/null 2>&1; then',
+            '  pm2 reload my-backend --update-env',
+            'else',
+            '  pm2 start dist/main.js --name "my-backend"',
+            'fi'
+          ) -join "`n"
 
-            cd /var/www/my-app
-
-            echo "==> Fetching latest chagnes..."
-            git fetch origin main
-            git reset --hard origin/main 
-
-            echo "==> Installing production & build deps."
-            npm ci
-
-            echo "==> Generating Prisma Client & Running Migrations"
-            npx prisma generate
-            npx prisma migrate deploy 
-
-            echo "==> Building application:"
-            npm run build
-
-            echo "==> Pruning development Dependencies..."
-            npm prune --omit=dev 
-
-            echo "==> Reloading application in PM2"
-            if pm2 describe my-backend > /dev/null 2>&1; then 
-              pm2 reload my-backend --update-env 
-            else 
-              pm2 start dist/main.js --name "my-backend"
-            fi
-          '@
-
-          $deployScript | docker exec -i vps-container bash -c 'tr -d "\r" | bash'
+          $commands | docker exec -i vps-container bash
