@@ -73,38 +73,47 @@ jobs:
 
   # Deploy to Local VPS Container
   deploy:
-    name: Deploy to Local VPS Container
+    name: Deploy
     needs: build-and-push
     runs-on: self-hosted
+    permissions:
+      contents: read
+      packages: read
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      TAG: ${{ github.sha }}
 
-    steps: 
+    steps:
       - name: Login to GHCR on Target Runner
-        uses: docker/login-action@v3 
-        with: 
+        uses: docker/login-action@v3
+        with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull Fresh Image & Run Database Migrations
+      - name: Pull Image & Run Database Migrations
+        shell: powershell
         run: |
-          # Pull the latest image build by job 2
-          docker pull ghcr.io/${{ env.IMAGE_NAME }}:latest
+          docker pull ghcr.io/${{ env.IMAGE_NAME }}:${{ env.TAG }}
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-          # Run prisma migrations in a temp container 
-          docker run --rm \
-            --env-file /var/www/my-app/.env \
-            ghcr.io/${{ env.IMAGE_NAME }}:latest \
+          docker run --rm `
+            --env-file D:\path\to\my-app\.env `
+            --network your_db_network `
+            ghcr.io/${{ env.IMAGE_NAME }}:${{ env.TAG }} `
             npx prisma migrate deploy
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Redeploy via production Docker compose
+      - name: Redeploy with Docker Compose
+        shell: powershell
+        working-directory: D:\path\to\my-app
         run: |
-          cd /var/www/my-app 
-          
-          # Pull latest image referenced in Prod compose file
           docker compose -f docker-compose.prod.yml pull
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-          # Recreate and restart container gracfully
           docker compose -f docker-compose.prod.yml up -d --remove-orphans
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-          # Remove old unused dangling images to save local disk space
-          docker image prune -f 
+          docker image prune -af --filter "until=168h"
