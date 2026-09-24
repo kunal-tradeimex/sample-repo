@@ -54,8 +54,8 @@ jobs:
         uses: docker/metadata-action@v5 
         with:
           images: \({{ env.REGISTRY }}/\){{ env.IMAGE_NAME }}
-          tags:
-            type=sha,format=long 
+          tags: |
+            type=sha,format=long,prefix= 
             type=raw,value=latest 
 
       - name: Set up Docker Buildx
