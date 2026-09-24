@@ -69,4 +69,4 @@ jobs:
             'fi'
           ) -join "`n"
 
-          $commands | docker exec -i vps-container bash
+          $commands | docker exec -i vps-container bash 
