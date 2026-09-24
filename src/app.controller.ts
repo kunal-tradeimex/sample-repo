@@ -15,6 +15,15 @@ export class AppController {
     return "Sample Controller text";
   }
 
+  // Define the sample health route
+  @Get('/health')
+  healthRoute(): any {
+    return {
+      success: true,
+      message: 'Health of the server is fine'
+    }
+  }
+
  
   // sample text added
 }
