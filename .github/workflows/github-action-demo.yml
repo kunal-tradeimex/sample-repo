@@ -40,31 +40,38 @@ jobs:
 
     steps:
       - name: Deploy to Local Container via Docker Exec
-        shell: bash
+        shell: powershell
         run: |
           # 1. Configure safe directory inside container
           docker exec vps-container git config --global --add safe.directory /var/www/my-app
 
-          # 2. Pass bash script directly into the container using Heredoc
-          docker exec -i vps-container bash << 'EOF'
-          set -e
-          cd /var/www/my-app
-          echo "==> Fetching latest changes..."
-          git fetch origin main
-          git reset --hard origin/main
-          echo "==> Installing production & build deps..."
-          npm ci
-          echo "==> Generating Prisma Client & Running Migrations..."
-          npx prisma generate
-          npx prisma migrate deploy
-          echo "==> Building application..."
-          npm run build
-          echo "==> Pruning development Dependencies..."
-          npm prune --omit=dev
-          echo "==> Reloading application in PM2..."
-          if pm2 describe my-backend > /dev/null 2>&1; then
-            pm2 reload my-backend --update-env
-          else
-            pm2 start dist/main.js --name "my-backend"
-          fi
-          EOF
+          # 2. Define commands array with Unix line endings
+          $commands = @(
+            'set -e'
+            'cd /var/www/my-app'
+            'echo "==> Fetching latest changes..."'
+            'git fetch origin main'
+            'git reset --hard origin/main'
+            'echo "==> Installing production & build deps..."'
+            'npm ci'
+            'echo "==> Generating Prisma Client & Running Migrations..."'
+            'npx prisma generate'
+            'npx prisma migrate deploy'
+            'echo "==> Building application..."'
+            'npm run build'
+            'echo "==> Pruning development Dependencies..."'
+            'npm prune --omit=dev'
+            'echo "==> Reloading application in PM2..."'
+            'if pm2 describe my-backend > /dev/null 2>&1; then'
+            '  pm2 reload my-backend --update-env'
+            'else'
+            '  pm2 start dist/main.js --name "my-backend"'
+            'fi'
+          ) -join "`n"
+
+          # 3. Convert to UTF-8 without BOM and Base64 encode
+          \(bytes = [System.Text.Encoding]::UTF8.GetBytes(\)commands)
+          \(base64 = [System.Convert]::ToBase64String(\)bytes)
+
+          # 4. Decode and execute inside the Linux container
+          docker exec vps-container bash -c "echo $base64 | base64 -d | bash"
