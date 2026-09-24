@@ -45,28 +45,29 @@ jobs:
           # 1. Configure safe directory inside container
           docker exec vps-container git config --global --add safe.directory /var/www/my-app
 
-          # 2. Execute fail-safe deployment inside container using encoded script stream
-          $commands = @(
-            'set -e',
-            'cd /var/www/my-app',
-            'echo "==> Fetching latest changes..."',
-            'git fetch origin main',
-            'git reset --hard origin/main',
-            'echo "==> Installing production & build deps..."',
-            'npm ci',
-            'echo "==> Generating Prisma Client & Running Migrations..."',
-            'npx prisma generate',
-            'npx prisma migrate deploy',
-            'echo "==> Building application..."',
-            'npm run build',
-            'echo "==> Pruning development Dependencies..."',
-            'npm prune --omit=dev',
-            'echo "==> Reloading application in PM2..."',
-            'if pm2 describe my-backend > /dev/null 2>&1; then',
-            '  pm2 reload my-backend --update-env',
-            'else',
-            '  pm2 start dist/main.js --name "my-backend"',
-            'fi'
-          ) -join "`n"
+          # 2. Pass bash script directly via heredoc string to avoid BOM injection
+          $script = @"
+          set -e
+          cd /var/www/my-app
+          echo "==> Fetching latest changes..."
+          git fetch origin main
+          git reset --hard origin/main
+          echo "==> Installing production & build deps..."
+          npm ci
+          echo "==> Generating Prisma Client & Running Migrations..."
+          npx prisma generate
+          npx prisma migrate deploy
+          echo "==> Building application..."
+          npm run build
+          echo "==> Pruning development Dependencies..."
+          npm prune --omit=dev
+          echo "==> Reloading application in PM2..."
+          if pm2 describe my-backend > /dev/null 2>&1; then
+            pm2 reload my-backend --update-env
+          else
+            pm2 start dist/main.js --name "my-backend"
+          fi
+          "@
 
-          $commands | docker exec -i vps-container bash 
+          [System.IO.File]::WriteAllText("\(env:TEMP\deploy.sh",\)script, (New-Object System.Text.UTF8Encoding $false))
+          Get-Content "$env:TEMP\deploy.sh" | docker exec -i vps-container bash
