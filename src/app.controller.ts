@@ -24,6 +24,6 @@ export class AppController {
     }
   }
 
- 
+ d
   // sample text added
 }
