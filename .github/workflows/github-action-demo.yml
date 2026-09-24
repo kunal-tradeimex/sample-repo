@@ -40,13 +40,13 @@ jobs:
 
     steps:
       - name: Deploy to Local Container via Docker Exec
-        shell: powershell
+        shell: bash
         run: |
           # 1. Configure safe directory inside container
           docker exec vps-container git config --global --add safe.directory /var/www/my-app
 
-          # 2. Pass bash script directly via heredoc string to avoid BOM injection
-          $script = @"
+          # 2. Pass bash script directly into the container using Heredoc
+          docker exec -i vps-container bash << 'EOF'
           set -e
           cd /var/www/my-app
           echo "==> Fetching latest changes..."
@@ -67,7 +67,4 @@ jobs:
           else
             pm2 start dist/main.js --name "my-backend"
           fi
-          "@
-
-          [System.IO.File]::WriteAllText("\(env:TEMP\deploy.sh",\)script, (New-Object System.Text.UTF8Encoding $false))
-          Get-Content "$env:TEMP\deploy.sh" | docker exec -i vps-container bash
+          EOF
