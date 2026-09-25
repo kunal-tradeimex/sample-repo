@@ -23,7 +23,7 @@ describe('AppController (e2e)', () => {
       .expect('Hello World!');
   });
 
-  afterEach(async () => {
+  afterEach(async () => { 
     await app.close();
   });
 });
