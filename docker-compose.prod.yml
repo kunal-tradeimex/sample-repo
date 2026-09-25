@@ -1,0 +1,15 @@
+services:
+  app:
+    image: ghcr.io/kunal-tradeimex/sample-repo:latest
+    container_name: production-app
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    external: true
