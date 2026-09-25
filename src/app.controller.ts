@@ -20,6 +20,7 @@ export class AppController {
   healthRoute(): any {
     return {
       success: true,
+      db: "DB Health is fine",
       message: 'Health of the server is fine'
     }
   }
