@@ -21,6 +21,7 @@ export class AppController {
     return {
       success: true,
       db: "DB Health is fine",
+      redis: "Redis health is fine",
       message: 'Health of the server is fine'
     }
   }
