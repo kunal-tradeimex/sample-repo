@@ -99,11 +99,7 @@ jobs:
           docker pull ghcr.io/${{ env.IMAGE_NAME }}:${{ env.TAG }}
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-          docker run --rm `
-            --env-file D:\kunal-working\plane\.env `
-            --network app-network `
-            ghcr.io/${{ env.IMAGE_NAME }}:${{ env.TAG }} `
-            npx prisma migrate deploy 
+          docker run --rm --env-file D:\kunal-working\plane\.env --network app-network ghcr.io/${{ env.IMAGE_NAME }}:${{ env.TAG }} npx prisma migrate deploy 
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Redeploy with Docker Compose
