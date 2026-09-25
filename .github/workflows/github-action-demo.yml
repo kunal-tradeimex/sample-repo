@@ -104,8 +104,8 @@ jobs:
 
       - name: Redeploy with Docker Compose
         shell: powershell
-        working-directory: D:\path\to\my-app
-        run: |
+          working-directory: D:\kunal-working\plane
+          run: |
           docker compose -f docker-compose.prod.yml pull
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
