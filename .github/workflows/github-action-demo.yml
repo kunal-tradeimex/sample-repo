@@ -103,7 +103,7 @@ jobs:
             --env-file D:\path\to\my-app\.env `
             --network your_db_network `
             ghcr.io/${{ env.IMAGE_NAME }}:${{ env.TAG }} `
-            npx prisma migrate deploy
+            npx prisma migrate deploy 
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Redeploy with Docker Compose
@@ -117,3 +117,5 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
           docker image prune -af --filter "until=168h"
+
+          
